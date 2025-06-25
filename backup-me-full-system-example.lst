@@ -1,0 +1,95 @@
+# -*- mode: conf -*-
+# use that file with
+# borg create --patterns-from patterns.lst repo::arch
+
+# Notes on patterns --------------------------------------------------------------------------------
+# fm:aa:something/*        Fnmatch (default if not specified for --exclude / --exclude-from)
+#                          '*'      = any number of characters
+#                          '?'      = any single character (use [?] to match '?')
+#                          '[...]'  = any single character specified, including ranges
+#                          '[!...]' = any character not specified
+#                          path separator is not treated specially
+#                          - For a path to match a pattern, the full path must match,
+#                            or it must match from the start of the full path to just before a path separator.
+#                          - Except for the root path, paths will never end in the path separator when matching is attempted.
+#                            Thus, if a given pattern ends in a path separator, a ‘*’ is appended before matching is attempted.
+#                          -> A leading path separator is always removed.
+# sh:/home/*/.thumbnails   shell match (default for --pattern / --patterns-from)
+#                          Like fm, but in addition:
+#                          **/ = zero or more directory levels
+#                          *   = zero or more arbitrary characters with the exception of any path separator
+#                          -> A leading path separator is always removed.
+# re:^/home/[^/]\.tmp/     regex match  Note: foo/ is "content of foo, but not foo itself"
+#                          see python doc for re module
+# pp:root/somedir          path prefix match - useful to match whole sub-directories
+#                          pp:root/somedir matches root/somedir and everything therein.
+#                          -> A leading path separator is always removed.
+# pf:root/file.ext         path full-match
+#                          it can not have any variable or unspecified parts - the full path must be given.
+#                          pf:root/file.ext matches root/file.ext only.
+#                          -> A leading path separator is always removed.
+# --------------------------------------------------------------------------------------------------
+
+# "sh:" pattern style is the default,
+# so the following line is not really needed if 'sh'
+P sh
+
+# root dir - all backuped files will be relative to this
+# you can give several roots, it is equivalent to provide several paths to "borg create"
+# it may be more efficient to provide several roots than 1 root and a few include paths if the root contains a lot of directories
+R /
+
+# use + to include
+#     - to exclude
+#     ! to totally ignore (do not recurse inside to test names)
+
+# REMEMBER that
+# The first matching pattern is used
+# so if an include pattern matches before an exclude pattern, the file is backed up.
+
+# don't even look in /proc, /run, ...
+! dev
+! media
+! mnt
+! proc
+! run
+! snap
+! sys
+! usr
+
+# ignore various caches directories
+! home/*/.cache
+! home/*/.cargo
+! home/*/.local
+! home/*/thinclient_drives
+- home/*/workspaceStorage
+
+- home/seki/.config/**/Cache
+- home/seki/.config/Code/CachedData
+- home/seki/.config/**/CacheStorage
+- home/*/.m2/repository/.cache
+
+# backup configs of git repo but not git or svn internal data
++ home/seki/**/.git/config
+# - home/**/.git
+- home/**/.svn
+
+# ignore some not important data 
+! home/seki/mnt
+! home/seki/tmp
+! home/seki/.plenv/build
+# - *.pyc
+# - home/back
+
+# backup system settings
++ etc
+# TODO: need probably to include part of /var like /var/mail
+# + var
+
+# my home
++ home/seki
+# but not other accounts
+- home
+
+# ignore everything else
+- *
