@@ -142,19 +142,19 @@ setup_colors
 parse_params "$@"
 
 if [[ -z $USER ]]; then
-    die "No value for variable USER. Please define it in $default_config or call $0 with --user"
+    die "No value for variable USER. Please define it in $default_config or call $0 with --user" 1
 fi
 if [[ -z $REPOSITORY ]]; then
-    die "No value for variable REPOSITORY. Please define it in $default_config or call $0 with --repository"
+    die "No value for variable REPOSITORY. Please define it in $default_config or call $0 with --repository" 1
 fi
 if [[ -z "$BORG_PASSPHRASE" ]]; then
-   die "No value for variable BORG_PASSPHRASE. Please define it in $default_config or call $0 with --passphrase" 
+   die "No value for variable BORG_PASSPHRASE. Please define it in $default_config or call $0 with --passphrase" 1
 fi
 if [[ -z "$COMPRESSION" ]]; then
    COMPRESSION=lz4
 fi
 if [[ ! -r "$backup_list" ]]; then
-    die "Cannot read processing list $backup_list"
+    die "Cannot read processing list $backup_list" 2
 fi
 
 # force usage of user cache in case borg is called from sudo
@@ -169,17 +169,26 @@ echo "Called with: $0 $@"
 #    exit 1
 #fi
 
+if [[ ! $REPOSITORY == *@*:* ]]; then # do not test remote repositories
+    if [[ ! -d "$REPOSITORY" ]]; then
+        die "Repository $REPOSITORY does not exist. External device not mounted?" 3
+    fi
+    if [[ ! -w "$REPOSITORY" ]]; then
+        die "Repository $REPOSITORY is not writable by you" 3
+    fi
+fi
+
 ################################################################################
 # Preliminary actions
 if [[ -x "$PRE_BACKUP" ]]; then
     msg "${WHITE}Performing pre-backup actions${NOFORMAT} from $script_dir/backup-me-first.sh..."
     "$PRE_BACKUP"
     if [[ $? -ne 0 ]]; then
-        die "${ERRFMT}Pre-backup script returned a non-zero value.${NOFORMAT}" 
+        die "${ERRFMT}Pre-backup script returned a non-zero value.${NOFORMAT}" 4
     fi
     msg "${OKFMT}Pre-backup actions done.${NOFORMAT}"
 elif [[ -f "$PRE_BACKUP" ]]; then
-    die "Pre-backup actions $PRE_BACKUP exists but is not executable"
+    die "Pre-backup actions $PRE_BACKUP exists but is not executable" 5
 else
     msg "No pre-backup action file defined."
 fi
